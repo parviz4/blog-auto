@@ -1,0 +1,29 @@
+name: Generate Weekly Articles
+
+on:
+  schedule:
+    # هر جمعه شب ساعت 8 (ایران)
+    - cron: '30 15 * * 5'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Generate articles
+      run: python generate_articles.py
+    
+    - name: Commit and push
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add articles.json
+        git commit -m "📝 مقالات جدید هفتگی - $(date '+%Y-%m-%d')"
+        git push
