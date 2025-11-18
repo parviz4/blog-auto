@@ -1,5 +1,7 @@
 config.env
-.env
-__pycache__/
+articles_ready.json
+articles_summary.txt
+html_articles/
 *.pyc
-.DS_Store
+__pycache__/
+.env
