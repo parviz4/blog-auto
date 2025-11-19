@@ -26,8 +26,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Run blog poster
-      env:
-        BLOGFA_USERNAME: ${{ secrets.BLOGFA_USERNAME }}
-        BLOGFA_PASSWORD: ${{ secrets.BLOGFA_PASSWORD }}
-      run: python blog_poster.py
+    - name: Fix and Run blog poster
+  env:
+    BLOGFA_USERNAME: ${{ secrets.BLOGFA_USERNAME }}
+    BLOGFA_PASSWORD: ${{ secrets.BLOGFA_PASSWORD }}
+  run: |
+    python -c "
+    import re
+    with open('blog_poster.py', 'r', encoding='utf-8') as f:
+        content = f.read()
+    content = re.sub(r\"load_dotenv\('config\.env'\)\", \"try:\\n    load_dotenv('config.env')\\nexcept:\\n    pass\", content)
+    with open('blog_poster.py', 'w', encoding='utf-8') as f:
+        f.write(content)
+    "
+    python blog_poster.py
+
