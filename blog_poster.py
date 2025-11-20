@@ -19,7 +19,7 @@ try:
 except:
     pass
 
-BLOGFA_USERNAME = os.getenv('BLOGFA_USERNAME', 'perplex')
+BLOGFA_USERNAME = os.getenv('BLOGFA_USERNAME', 'perplex@rasta4u')
 BLOGFA_PASSWORD = os.getenv('BLOGFA_PASSWORD', '123456789')
 
 def load_articles():
@@ -193,3 +193,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
