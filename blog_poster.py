@@ -17,7 +17,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 # بارگذاری متغیرهای محیطی
 load_dotenv('config.env')
 
-BLOGFA_USERNAME = os.getenv('BLOGFA_USERNAME', 'perplex@rasta4u')
+BLOGFA_USERNAME = os.getenv('BLOGFA_USERNAME', 'perplex')
 BLOGFA_PASSWORD = os.getenv('BLOGFA_PASSWORD', '123456789')
 
 def load_articles():
@@ -169,3 +169,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
