@@ -2,42 +2,32 @@ name: Auto Blog Poster
 
 on:
   schedule:
-    # شنبه تا چهارشنبه - 5 ساعت متفاوت (هر 1-2 ساعت)
-    - cron: '0 4 * * 1-4'     # 8:30 صبح (ایران)
-    - cron: '30 6 * * 1-4'    # 10:00 صبح
-    - cron: '0 9 * * 1-4'     # 1:30 بعداز‌ظهر
-    - cron: '30 11 * * 1-4'   # 4:00 بعداز‌ظهر
-    - cron: '0 14 * * 1-4'    # 6:30 عصر
+    # شنبه تا چهارشنبه - 8 صبح تا 8 شب (ایران)
+    - cron: '0 5 * * 0-3,6'    # 8:30 صبح
+    - cron: '30 6 * * 0-3,6'   # 10:00 صبح
+    - cron: '0 9 * * 0-3,6'    # 12:30 بعداز‌ظهر
+    - cron: '30 11 * * 0-3,6'  # 3:00 بعداز‌ظهر
+    - cron: '0 14 * * 0-3,6'   # 5:30 عصر
+    - cron: '30 15 * * 0-3,6'  # 7:00 عصر
 
 jobs:
   post:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    - name: Fix and Run blog poster
-  env:
-    BLOGFA_USERNAME: ${{ secrets.BLOGFA_USERNAME }}
-    BLOGFA_PASSWORD: ${{ secrets.BLOGFA_PASSWORD }}
-  run: |
-    python -c "
-    import re
-    with open('blog_poster.py', 'r', encoding='utf-8') as f:
-        content = f.read()
-    content = re.sub(r\"load_dotenv\('config\.env'\)\", \"try:\\n    load_dotenv('config.env')\\nexcept:\\n    pass\", content)
-    with open('blog_poster.py', 'w', encoding='utf-8') as f:
-        f.write(content)
-    "
-    python blog_poster.py
-
+      - uses: actions/checkout@v3
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run blog poster
+        env:
+          BLOGFA_USERNAME: ${{ secrets.BLOGFA_USERNAME }}
+          BLOGFA_PASSWORD: ${{ secrets.BLOGFA_PASSWORD }}
+        run: python blog_poster.py
