@@ -1,8 +1,21 @@
+# Configuration files
 config.env
-articles_ready.json
-articles_summary.txt
-html_articles/
-*.pyc
-__pycache__/
 .env
 
+# Generated data files
+*.json
+*.txt
+
+# Generated media and debug files
+*.html
+*.png
+*.jpg
+*.jpeg
+
+# Python cache
+*.pyc
+__pycache__/
+
+# IDE folders
+.idea/
+.vscode/
