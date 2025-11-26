@@ -17,8 +17,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 # بارگذاری متغیرهای محیطی از config.env
 load_dotenv('config.env')
 
-BLOGFA_USERNAME = os.getenv('BLOGFA_USERNAME')
-BLOGFA_PASSWORD = os.getenv('BLOGFA_PASSWORD')
+BLOGFA_USERNAME = os.getenv('perplex@rasta4u')
+BLOGFA_PASSWORD = os.getenv('123456789')
 
 def should_post_now():
     """بررسی می‌کند که آیا زمان فعلی برای ارسال پست مناسب است یا خیر."""
