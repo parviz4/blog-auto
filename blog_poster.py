@@ -11,186 +11,126 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from webdriver_manager.chrome import ChromeDriverManager
 
-# بارگذاری متغیرهای محیطی
-try:
-    load_dotenv('config.env')
-except:
-    pass
-
-BLOGFA_USERNAME = os.getenv('BLOGFA_USERNAME', 'perplex@rasta4u')
-BLOGFA_PASSWORD = os.getenv('BLOGFA_PASSWORD', '123456789')
-
-def load_articles():
-    """بارگذاری مقالات از فایل JSON"""
-    try:
-        with open('articles.json', 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        print(f"✅ {len(data['articles'])} مقاله بارگذاری شد")
-        return data['articles']
-    except Exception as e:
-        print(f"❌ خطا در بارگذاری مقالات: {e}")
-        return []
-
-def select_random_article(articles):
-    """انتخاب یک مقالهٔ تصادفی"""
-    if not articles:
-        return None
-    return random.choice(articles)
-
-def login_to_blogfa(driver):
-    """ورود به blogfa"""
-    print("\n🔗 اتصال به blogfa...")
-    try:
-        driver.get('https://blogfa.com/desktop/login.aspx')
-        time.sleep(3)
-        
-        # یافتن فیلدهای ورود
-        username_field = WebDriverWait(driver, 10).until(
-            EC.presence_of_all_elements_located((By.TAG_NAME, "input"))
-        )
-        
-        if len(username_field) >= 2:
-            username_field[0].clear()
-            username_field[0].send_keys(BLOGFA_USERNAME)
-            print(f"✅ نام کاربری: {BLOGFA_USERNAME}")
-            
-            # رمز عبور
-            username_field[1].clear()
-            username_field[1].send_keys(BLOGFA_PASSWORD)
-            print("✅ رمز عبور وارد شد")
-        else:
-            print("❌ خطا: فیلدهای ورود پیدا نشد")
-            return False
-        
-        # کلیک بر دکمهٔ ورود
-        time.sleep(1)
-        login_buttons = driver.find_elements(By.TAG_NAME, "button")
-        for btn in login_buttons:
-            if "ورود" in btn.text or "login" in btn.text.lower():
-                btn.click()
-                break
-        
-        time.sleep(5)
-        print("✅ ورود موفق!")
-        return True
-        
-    except Exception as e:
-        print(f"❌ خطا در ورود: {e}")
-        return False
-
-def post_article(driver, article):
-    """ارسال مقاله به blogfa"""
-    print("\n📝 ارسال مقاله...")
-    try:
-        driver.get('https://blogfa.com/desktop/Post.aspx?action=new')
-        time.sleep(3)
-        
-        # عنوان
-        title_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "input[placeholder*='عنوان'], input[placeholder*='title']"))
-        )
-        title_input.clear()
-        title_input.send_keys(article['title'])
-        print(f"✅ عنوان: {article['title'][:50]}...")
-        
-        # متن - بررسی textarea
-        content_fields = driver.find_elements(By.TAG_NAME, "textarea")
-        if content_fields:
-            content_fields[0].clear()
-            content_fields[0].send_keys(article['content'])
-            print(f"✅ متن ({len(article['content'])} کاراکتر)")
-        
-        # کلمات کلیدی
-        keyword_inputs = driver.find_elements(By.CSS_SELECTOR, "input[placeholder*='کلید'], input[placeholder*='keyword']")
-        if keyword_inputs:
-            keyword_inputs[0].clear()
-            keyword_inputs[0].send_keys(article['keywords'])
-            print(f"✅ کلمات کلیدی")
-        
-        # انتشار
-        time.sleep(2)
-        publish_buttons = driver.find_elements(By.TAG_NAME, "button")
-        for btn in publish_buttons:
-            if "انتشار" in btn.text or "publish" in btn.text.lower():
-                btn.click()
-                break
-        
-        time.sleep(3)
-        print("✅✅✅ مقاله با موفقیت منتشر شد!")
-        return True
-        
-    except Exception as e:
-        print(f"❌ خطا در ارسال: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
+load_dotenv('config.env')
+BLOGFA_USERNAME = os.getenv('BLOGFA_USERNAME')
+BLOGFA_PASSWORD = os.getenv('BLOGFA_PASSWORD')
 
 def should_post_now():
-    """بررسی زمان مناسب"""
     now = datetime.now()
-    
-    # فقط شنبه تا چهارشنبه (روزهای 1-5 در Python: 0=دوشنبه)
-    if now.weekday() > 4:  # جمعه یا شنبه
-        print(f"⏸ امروز جمعه یا شنبه - منتشر نمی‌شود")
-        return False
-    
-    # فقط 8 صبح تا 8 شب
-    if now.hour < 8 or now.hour >= 20:
-        print(f"⏸ ساعت {now.hour} - فقط 8 صبح تا 8 شب")
-        return False
-    
+    if now.weekday() in [4, 5]: return False
+    if not 8 <= now.hour < 20: return False
     return True
 
+def load_articles():
+    try:
+        with open('articles.json', 'r', encoding='utf-8') as f:
+            return json.load(f).get('articles', [])
+    except: return []
+
+def select_random_article(articles):
+    return random.choice(articles) if articles else None
+
+def login_to_blogfa(driver):
+    print("\n🔗 در حال اتصال به بلاگفا با حالت پیشرفته...")
+    try:
+        driver.get('https://blogfa.com/desktop/login.aspx')
+        wait = WebDriverWait(driver, 30)
+        username_field = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='usrid']")))
+        password_field = driver.find_element(By.CSS_SELECTOR, "input[name='ups']")
+
+        for char in BLOGFA_USERNAME:
+            username_field.send_keys(char)
+            time.sleep(random.uniform(0.05, 0.15))
+
+        for char in BLOGFA_PASSWORD:
+            password_field.send_keys(char)
+            time.sleep(random.uniform(0.05, 0.15))
+
+        login_button = driver.find_element(By.CSS_SELECTOR, "input[name='btnSubmit']")
+        login_button.click()
+
+        wait.until(EC.presence_of_element_located((By.XPATH, "//a[contains(text(), 'خروج')]")))
+        print("✅ ورود موفقیت‌آمیز تأیید شد!")
+        return True
+    except Exception as e:
+        print(f"❌ خطا در فرآیند ورود: {e.__class__.__name__}")
+        driver.save_screenshot('login_error.png')
+        return False
+
+def post_html_article(driver, article):
+    print("\n📝 در حال ارسال مقاله به صورت HTML...")
+    try:
+        driver.get('https://blogfa.com/desktop/Post.aspx?action=new')
+        wait = WebDriverWait(driver, 30)
+
+        title_input = wait.until(EC.presence_of_element_located((By.ID, 'txtPostTitle')))
+        title_input.clear()
+        title_input.send_keys(article['title'])
+        print(f"  - عنوان: {article['title'][:60]}...")
+
+        iframe_locator = (By.CSS_SELECTOR, "iframe.cke_wysiwyg_frame")
+        wait.until(EC.frame_to_be_available_and_switch_to_it(iframe_locator))
+
+        editor_body = driver.find_element(By.TAG_NAME, 'body')
+        driver.execute_script("arguments[0].innerHTML = arguments[1];", editor_body, article['html_content'])
+        print(f"  - محتوای HTML تزریق شد.")
+
+        driver.switch_to.default_content()
+
+        keywords_input = driver.find_element(By.ID, 'txtTags')
+        keywords_input.clear()
+        keywords_input.send_keys(article['keywords'])
+        print(f"  - کلمات کلیدی وارد شد.")
+
+        publish_button = driver.find_element(By.ID, 'btnPublish')
+        publish_button.click()
+        print("  - دکمه انتشار کلیک شد. در حال انتظار برای پردازش سرور...")
+
+        # --- راه‌حل نهایی: وقفه طولانی برای اطمینان از پردازش ---
+        time.sleep(45)
+        # --------------------------------------------------------
+
+        print("\n✅✅✅ مقاله با موفقیت منتشر شد!")
+        return True
+
+    except (TimeoutException, NoSuchElementException) as e:
+        print(f"❌ خطا در ارسال مقاله: {e.__class__.__name__}")
+        driver.save_screenshot('post_error_screenshot.png')
+        return False
+
 def main():
-    """تابع اصلی"""
     print("\n" + "="*60)
-    print("🚀 سیستم خودکار ارسال مقالات blogfa")
+    print("🚀 سیستم خودکار ارسال مقالات HTML به بلاگفا (حالت نهایی)")
     print("="*60)
-    print(f"⏰ زمان: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    
-    # بررسی زمان
-    if not should_post_now():
-        print("\n❌ زمان مناسب نیست\n")
-        return
-    
-    # بارگذاری مقالات
+
+    if not should_post_now(): return
     articles = load_articles()
-    if not articles:
-        print("❌ هیچ مقاله‌ای موجود نیست!")
-        return
-    
-    # انتخاب مقالهٔ تصادفی
-    article = select_random_article(articles)
-    if not article:
-        print("❌ خطا در انتخاب مقاله")
-        return
-    
-    print(f"🎲 انتخاب تصادفی: {article['title']}")
-    
-    # اتصال و ارسال
+    if not articles: return
+    article_to_post = select_random_article(articles)
+    if not article_to_post: return
+
+    print(f"🎲 مقاله انتخابی: {article_to_post['title']}")
+
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-gpu')
-    
-    driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()),
-        options=options
-    )
-    
+    options.add_argument('user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36')
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
+
+    driver = None
     try:
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
         if login_to_blogfa(driver):
-            post_article(driver, article)
+            post_html_article(driver, article_to_post)
     finally:
-        driver.quit()
-    
-    print("\n" + "="*60)
-    print("✅ کار تمام شد!")
-    print("="*60 + "\n")
+        if driver: driver.quit()
+        print("\n" + "="*60 + "\n✅ عملیات به پایان رسید.\n" + "="*60 + "\n")
 
 if __name__ == '__main__':
     main()
-
